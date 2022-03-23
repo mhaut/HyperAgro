@@ -39,24 +39,30 @@ class RepeatedTimer(object):
         listResponse = self.args[0].listFiles(self.args[1])
         self.args[0].disconnect()
         #Se prepara FTP para recuperar lo grabado y borrarlo del almacenamiento interno
-        ftpConn = ftp.FTP("10.0.65.50")
-        ftpConn.login("ftpuser","ftpuser")
-        #Se prepara MongoDB para almacenar los ficheros
-        client = MongoClient('localhost', 27017)
-        fs = gridfs.GridFS(client.test, "gridfstest")
-        timestamp = time.time() #un mismo timestamp para todos los ficheros capturados a la vez
-        for f in listResponse:
-            if 'raw' in f["name"]: #Se guardan los ficheros en local, se almacena su contenido en mongo y se borran del sistema
-                filePath = "./destino/"+f["name"][f["name"].rfind('/')+1:] 
-                destFile = open(filePath, 'wb')
-                ftpConn.retrbinary("RETR " + f["name"], destFile.write)
-                destFile.close()
-                sourceFile = open(filePath, 'rb')
-                fs.put(sourceFile, filename=f["name"][f["name"].rfind('/')+1:], metadata= {"timestamp":timestamp})
-                os.remove(filePath)     
-            ftpConn.delete(f["name"])
-            
-        ftpConn.rmd(self.args[1])
-        ftpConn.quit()
+        try:        
+            ftpConn = ftp.FTP("10.0.65.50")
+            ftpConn.login("ftpuser","ftpuser")
+            #Se prepara MongoDB para almacenar los ficheros
+            client = MongoClient('localhost', 27017)
+            fs = gridfs.GridFS(client.test, "gridfstest")
+            timestamp = time.time() #un mismo timestamp para todos los ficheros capturados a la vez
+            for f in listResponse:
+                if 'raw' in f["name"]: #Se guardan los ficheros en local, se almacena su contenido en mongo y se borran del sistema
+                    filePath = "./destino/"+f["name"][f["name"].rfind('/')+1:] 
+                    destFile = open(filePath, 'wb')
+                    ftpConn.retrbinary("RETR " + f["name"], destFile.write)
+                    destFile.close()
+                    sourceFile = open(filePath, 'rb')
+                    fs.put(sourceFile, filename=f["name"][f["name"].rfind('/')+1:], metadata= {"timestamp":timestamp})
+                    os.remove(filePath)     
+                #ftpConn.delete(f["name"])
+                
+            #ftpConn.rmd(self.args[1])
+            ftpConn.quit()
+        except: 
+            # Si la conexion falla se guarda en un fichero la ruta del directorio para procesarlo en otro momento
+            errorFile = open("./DirectoriosPorProcesar.txt", "wt")
+            errorFile.write(self.args[1], "\n")
+        
         print("Done")
                 
