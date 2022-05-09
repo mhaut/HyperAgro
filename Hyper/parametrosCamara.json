@@ -1,0 +1,8 @@
+{
+    "verbosity": false,
+    "exposureTime": 40,
+    "framePeriod": 41,
+    "prefix": "Probando",
+    "maxCubes": 1,
+    "maxFramesPerCube": 100
+}
