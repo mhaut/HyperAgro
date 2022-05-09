@@ -1,4 +1,3 @@
-from importlib.metadata import PackageNotFoundError
 from colored import fg
 
 B = fg(238)
@@ -6,7 +5,7 @@ W = fg(15)
 C = fg(193)
 print(B, " ")
 
-import cv2, signal, sys, os, shutil, traceback, glob
+import cv2, signal, sys, os, shutil, traceback, glob, time
 from datetime import datetime
 from telegram_debugger import sendMSG
 from img_sender import tryToSendNewPacks
@@ -37,7 +36,9 @@ try:
         "/dev/video0",
         "/dev/video2",
         "/dev/video4",
-        "/dev/video6"
+        "/dev/video6",
+        "/dev/video8",
+        "/dev/video10"
     ]
 
 
@@ -48,9 +49,10 @@ try:
 
     EXPO_NUM_FRAMES = 10
     FRAME_KIB_SIZE = 500
-    MIN_FREE_SPACE = 3 # En GiB
+    MIN_FREE_SPACE = 4 # En GiB
     TELEGRAM_INFO_PERIOD = 100 # Vueltas de bucle para enviar info al telegram
     SEND_FTP_PERIOD = 1 # Cada cuantos packs se envian las imagenes al server ftp
+    WAIT_TIME_ON_FULL_DISK = 1 # SEGUNSDOS DE ESPERA ENTRE MENSAJES DE "DISCO LLENO"
 
 
 
@@ -130,6 +132,8 @@ try:
         if (free // (2**30)) < MIN_FREE_SPACE:
             print(fg(9) + "[!] QUEDAN MENOS DE " + W + str(MIN_FREE_SPACE) + fg(9) + " GiB LIBRES [!]" + W)
             sendMSG("[!] QUEDAN MENOS DE " + str(MIN_FREE_SPACE) + " GiB LIBRES [!]", is_warning=True, dont_print=True)
+            time.sleep(WAIT_TIME_ON_FULL_DISK)
+            continue
 
         # Guardamos un frame por cada camara
         for cam_path in cam_path_list:
@@ -161,7 +165,8 @@ try:
 
             # Guardamos el frame
             if ret == True:
-                img_save_path = os.path.join(saving_folder, instant_str + "___cam_" + cam_path[-1]+ ".jpg")
+                cam_number = cam_path.split("video")[-1]
+                img_save_path = os.path.join(saving_folder, instant_str + "___cam_" + cam_number + ".jpg")
                 cv2.imwrite(img_save_path, frame)
             else:
                 print(fg(9) + "Bad Frame" + W + cam_path)
@@ -173,8 +178,8 @@ try:
         
 
         # Cada X packs, intentamos enviar las imagenes al servidor
-        if t_send_counter % SEND_FTP_PERIOD == 0:
-            tryToSendNewPacks()
+#        if t_send_counter % SEND_FTP_PERIOD == 0:
+#            tryToSendNewPacks()
         
 
 
