@@ -32,27 +32,25 @@ try:
 
 
     # LISTA DE CAMARAS A UTILIZAR
-    cam_path_list = [
-        "/dev/video0",
-        "/dev/video2",
-        "/dev/video4",
-        "/dev/video6",
-        "/dev/video8",
-        "/dev/video10"
+    cam_list = [
+        {"path" : "/dev/video0",  "pos" : 0, "correction" : cv2.ROTATE_90_COUNTERCLOCKWISE},
+        {"path" : "/dev/video10", "pos" : 1, "correction" : cv2.ROTATE_90_COUNTERCLOCKWISE},
+        {"path" : "/dev/video8",  "pos" : 2, "correction" : cv2.ROTATE_90_COUNTERCLOCKWISE},
+        {"path" : "/dev/video12", "pos" : 3, "correction" : cv2.ROTATE_90_CLOCKWISE},
+        {"path" : "/dev/video6",  "pos" : 4, "correction" : cv2.ROTATE_90_CLOCKWISE},
+        {"path" : "/dev/video4",  "pos" : 5, "correction" : cv2.ROTATE_90_CLOCKWISE},
+        {"path" : "/dev/video2",  "pos" : 6, "correction" : cv2.ROTATE_90_CLOCKWISE}
     ]
 
 
     # CONSTANTES
     FRAME_WIDTH = 1920
     FRAME_HEIGHT = 1080
-    ROTATE_IMG = cv2.ROTATE_90_COUNTERCLOCKWISE # Usar None para no rotar o cv2.ROTATE_90_CLOCKWISE para rotarla (cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-    EXPO_NUM_FRAMES = 10
+    EXPO_NUM_FRAMES = 20
     FRAME_KIB_SIZE = 500
     MIN_FREE_SPACE = 4 # En GiB
-    TELEGRAM_INFO_PERIOD = 100 # Vueltas de bucle para enviar info al telegram
-    SEND_FTP_PERIOD = 1 # Cada cuantos packs se envian las imagenes al server ftp
-    WAIT_TIME_ON_FULL_DISK = 1 # SEGUNSDOS DE ESPERA ENTRE MENSAJES DE "DISCO LLENO"
+    WAIT_TIME_ON_FULL_DISK = 3600 # SEGUNDOS DE ESPERA ENTRE MENSAJES DE "DISCO LLENO"
 
 
 
@@ -120,13 +118,12 @@ try:
         frames_left = (free // (2**10)) // FRAME_KIB_SIZE # un frame aprox 280 KiB a 720p o 500KiB a 1080p
         img_num = len(glob.glob(os.path.join(saving_folder, "*.jpg")))
         print(fg(202) + "Espacio libre en disco: " + fg(14) + str(free // (2**20)) + fg(202) + " MiB  (" + fg(14) + str(frames_left) + fg(202) + " frames)" + B)
-        print(fg(202) + "Imagenes actuales: " + fg(14)  + str(img_num) + fg(202) + " (" + fg(14) + str(img_num // len(cam_path_list)) + fg(202) + " packs)" + B)
+        print(fg(202) + "Imagenes actuales: " + fg(14)  + str(img_num) + fg(202) + " (" + fg(14) + str(img_num // len(cam_list)) + fg(202) + " packs)" + B)
 
         # Info para telegram
-        if t_info_counter % TELEGRAM_INFO_PERIOD == 0:
-            sendMSG("Espacio libre en disco: "+ str(free // (2**20)) + " MiB  (" + str(frames_left) + " frames)", dont_print=True)
-            sendMSG("Imagenes actuales: " + str(img_num) + " (" + str(img_num // len(cam_path_list)) + " packs)", dont_print=True)
-            
+        sendMSG("Espacio libre en disco: "+ str(free // (2**20)) + " MiB  (" + str(frames_left) + " frames)", dont_print=True)
+        sendMSG("Imagenes actuales: " + str(img_num) + " (" + str(img_num // len(cam_list)) + " packs)", dont_print=True)
+        
 
         # Comprobacion de seguridad de espacio libre
         if (free // (2**30)) < MIN_FREE_SPACE:
@@ -136,7 +133,13 @@ try:
             continue
 
         # Guardamos un frame por cada camara
-        for cam_path in cam_path_list:
+        for cam_entry in cam_list:
+
+            cam_path = cam_entry["path"]
+            cam_pos = cam_entry["pos"]
+            cam_correction = cam_entry["correction"]
+
+
             # Conectamos con la camara
             cam = cv2.VideoCapture(cam_path)
 
@@ -158,15 +161,14 @@ try:
             # Sacamos el frame definitivo
             ret, frame = cam.read()
 
-            # Rotamos si es necesario
-            if ROTATE_IMG != None:
-                frame = cv2.rotate(frame, ROTATE_IMG)
+
+            frame = cv2.rotate(frame, cam_correction)
 
 
             # Guardamos el frame
             if ret == True:
                 cam_number = cam_path.split("video")[-1]
-                img_save_path = os.path.join(saving_folder, instant_str + "___cam_" + cam_number + ".jpg")
+                img_save_path = os.path.join(saving_folder, instant_str + "___cam_" + cam_number + "___pos_" + str(cam_pos) + ".jpg")
                 cv2.imwrite(img_save_path, frame)
             else:
                 print(fg(9) + "Bad Frame" + W + cam_path)
@@ -177,9 +179,6 @@ try:
             cam.release()
         
 
-        # Cada X packs, intentamos enviar las imagenes al servidor
-#        if t_send_counter % SEND_FTP_PERIOD == 0:
-#            tryToSendNewPacks()
         
 
 
