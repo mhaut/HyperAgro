@@ -168,7 +168,7 @@ try:
             # Guardamos el frame
             if ret == True:
                 cam_number = cam_path.split("video")[-1]
-                img_save_path = os.path.join(saving_folder, instant_str + "___cam_" + cam_number + "___pos_" + str(cam_pos) + ".jpg")
+                img_save_path = os.path.join(saving_folder, instant_str + "___pos_" + str(cam_pos) + "___cam_" + cam_number + ".jpg")
                 cv2.imwrite(img_save_path, frame)
             else:
                 print(fg(9) + "Bad Frame" + W + cam_path)
