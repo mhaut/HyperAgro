@@ -46,7 +46,7 @@ try:
     FRAME_WIDTH = 1920
     FRAME_HEIGHT = 1080
 
-    EXPO_NUM_FRAMES = 20
+    EXPO_NUM_FRAMES = 100
     FRAME_KIB_SIZE = 500
     MIN_FREE_SPACE = 4 # En GiB
     WAIT_TIME_ON_FULL_DISK = 3600 # SEGUNDOS DE ESPERA ENTRE MENSAJES DE "DISCO LLENO"
@@ -157,6 +157,9 @@ try:
 
     while True:
 
+        # Esperamos hasta la siguiente hora target antes de la siguiente captura
+        #waitTillTargetTime()
+
 
         # Sacamos el instante unico para toda la tanda de frames
         instant_str = datetime.now().isoformat()
@@ -244,8 +247,7 @@ try:
             # Liberamos el flujo
             cam.release()
 
-        # Esperamos hasta la siguiente hora target antes de la siguiente captura
-        waitTillTargetTime()
+        
         
 
         
