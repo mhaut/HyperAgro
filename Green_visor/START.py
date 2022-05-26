@@ -158,7 +158,7 @@ try:
     while True:
 
         # Esperamos hasta la siguiente hora target antes de la siguiente captura
-        #waitTillTargetTime()
+        waitTillTargetTime()
 
 
         # Sacamos el instante unico para toda la tanda de frames
