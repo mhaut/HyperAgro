@@ -45,7 +45,6 @@ try:
     # CONSTANTES
     FRAME_WIDTH = 1920
     FRAME_HEIGHT = 1080
-    CAM_EXPOSITION = 20.0
 
     EXPO_NUM_FRAMES = 10
     FRAME_KIB_SIZE = 500
@@ -206,7 +205,6 @@ try:
             # Configuramos las camaras validas
             cam.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
             cam.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
-            cam.set(15, CAM_EXPOSITION) # Exposicion
 
             # Sacamos frames para que la exposicion automatica se estabilice
             for i in range(EXPO_NUM_FRAMES):
@@ -229,6 +227,9 @@ try:
                     cam_number = cam_path.split("video")[-1]
                     img_save_path = os.path.join(saving_folder, instant_str + "___pos_" + str(cam_pos) + "___cam_" + cam_number + ".jpg")
                     cv2.imwrite(img_save_path, frame)
+
+                    img_save_path = os.path.join(saving_folder, instant_str + "___pos_" + str(cam_pos) + "___cam_" + cam_number + "EEE.jpg")
+                    cv2.imwrite(img_save_path, cv2.equalizeHist(frame))
                     print(fg(10) + "guardado" + B)
                     frame_succes = True
                 else:
@@ -240,7 +241,6 @@ try:
                     cam = cv2.VideoCapture(cam_path)
                     cam.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
                     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
-                    cam.set(15, CAM_EXPOSITION) # Exposicion
                     for i in range(EXPO_NUM_FRAMES):
                         ret, frame = cam.read()
                     ret, frame = cam.read()
