@@ -8,7 +8,6 @@ print(B, " ")
 import cv2, signal, sys, os, shutil, traceback, glob, time
 from datetime import datetime
 from telegram_debugger import sendMSG
-from img_sender import tryToSendNewPacks
 
 
 try:
@@ -51,6 +50,58 @@ try:
     FRAME_KIB_SIZE = 500
     MIN_FREE_SPACE = 4 # En GiB
     WAIT_TIME_ON_FULL_DISK = 3600 # SEGUNDOS DE ESPERA ENTRE MENSAJES DE "DISCO LLENO"
+
+    CAPTURE_MOMENT_ISOFORMAT = "11:14:40"
+    BASE_ISOFORMAT = "2022-05-26T"
+
+    BASE_DATETIME_DATE   = "2000-01-01T" # NO CAMBIAR
+    TARGER_DATETIME_TIME = "21:00:00" # HORA DEL DIA A LA QUE SE REALIZA LA CAPTURA (formato 24 horas)
+
+
+
+
+
+
+
+
+
+    def getSecondsToNextTarget():
+        """
+        Funcion que devuelve los segundos que faltan 
+        para llegar a la hora target del dia. Si se ha pasado 
+        la hora target, indica los segundos hasta la siguiente hora target.
+        """
+        current_time_iso = datetime.now().time().isoformat()
+        current_compare_datetime = datetime.fromisoformat(BASE_DATETIME_DATE + current_time_iso)
+
+        target_compare_datetime = datetime.fromisoformat(BASE_DATETIME_DATE + TARGER_DATETIME_TIME)
+
+        delta_time = target_compare_datetime - current_compare_datetime
+
+        return delta_time.seconds
+    
+
+
+
+    def waitTillTargetTime():
+        """
+        Funcion que duerme el proceso hasta que llega la hora target.
+        """
+
+        STT = getSecondsToNextTarget()
+        # Esperamos la mitad del tiempo hasta que queden menos de X segundos
+        while STT > 60:
+            sendMSG("Durmiendo " + str(STT//2) + " segundos", dont_print=True)
+            time.sleep(STT//2)
+            STT = getSecondsToNextTarget()
+        
+        # Dormimos lo que queda
+        sendMSG("Durmiendo ultimos" + str(STT) + " segundos", dont_print=True)
+        time.sleep(STT)
+
+
+
+
 
 
 
@@ -102,9 +153,6 @@ try:
     ######################################################################
     ######################################################################
 
-    # cada X iteraciones se envia info al telegram
-    t_info_counter = 0
-    t_send_counter = 0
     
 
     while True:
@@ -140,15 +188,16 @@ try:
             cam_correction = cam_entry["correction"]
 
 
+
             # Conectamos con la camara
             cam = cv2.VideoCapture(cam_path)
 
-            # Si la camara no es valida, descartamos
+            # Si la camara no es valida, descartamos y avisamos
             if not (cam.isOpened()):
                 print(W + "Entrada de video " + str(cam_path) + fg(9) + " no valida." + B)
                 sendMSG("Entrada de video " + str(cam_path) + " no valida.", is_warning=True, dont_print=True)
                 continue
-            print(W + "Entrada de video " + str(cam_path) + fg(10) + " valida." + B)
+            print(W + "Entrada de video " + str(cam_path) + fg(10) + " valida." + B, end=" ")
             
             # Configuramos las camaras validas
             cam.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
@@ -161,30 +210,46 @@ try:
             # Sacamos el frame definitivo
             ret, frame = cam.read()
 
-
+            # Ralizamos la correccion pertinente a la imagen de la camara X
             frame = cv2.rotate(frame, cam_correction)
 
 
             # Guardamos el frame
-            if ret == True:
-                cam_number = cam_path.split("video")[-1]
-                img_save_path = os.path.join(saving_folder, instant_str + "___pos_" + str(cam_pos) + "___cam_" + cam_number + ".jpg")
-                cv2.imwrite(img_save_path, frame)
-            else:
-                print(fg(9) + "Bad Frame" + W + cam_path)
-                sendMSG("Bad Frame" + cam_path, is_warning=True, dont_print=True)
+            frame_succes = False
 
+            while frame_succes == False:
+
+                if ret == True:
+                    # Si hubo exito, guardamos e imprimimos
+                    cam_number = cam_path.split("video")[-1]
+                    img_save_path = os.path.join(saving_folder, instant_str + "___pos_" + str(cam_pos) + "___cam_" + cam_number + ".jpg")
+                    cv2.imwrite(img_save_path, frame)
+                    print(fg(10) + "guardado" + B)
+                    frame_succes = True
+                else:
+                    # Si no hubo exito, avisamos y reiniciamos
+                    print(fg(9) + "Bad Frame" + W + cam_path)
+                    sendMSG("Bad Frame" + cam_path, is_warning=True, dont_print=True)
+
+                    # Montamos de nuevo la conexión con el flujo y la extraccion de la imagen
+                    cam = cv2.VideoCapture(cam_path)
+                    cam.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
+                    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
+                    for i in range(EXPO_NUM_FRAMES):
+                        ret, frame = cam.read()
+                    ret, frame = cam.read()
+                    frame = cv2.rotate(frame, cam_correction)
             
+
             # Liberamos el flujo
             cam.release()
+
+        # Esperamos hasta la siguiente hora target antes de la siguiente captura
+        waitTillTargetTime()
         
 
         
 
-
-        # Reseteamos
-        t_info_counter += 1
-        t_send_counter += 1
 
 except Exception as e:
     # Mensaje de error al telegram
