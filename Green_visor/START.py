@@ -227,9 +227,6 @@ try:
                     cam_number = cam_path.split("video")[-1]
                     img_save_path = os.path.join(saving_folder, instant_str + "___pos_" + str(cam_pos) + "___cam_" + cam_number + ".jpg")
                     cv2.imwrite(img_save_path, frame)
-
-                    img_save_path = os.path.join(saving_folder, instant_str + "___pos_" + str(cam_pos) + "___cam_" + cam_number + "EEE.jpg")
-                    cv2.imwrite(img_save_path, cv2.equalizeHist(frame))
                     print(fg(10) + "guardado" + B)
                     frame_succes = True
                 else:
