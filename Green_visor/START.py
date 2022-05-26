@@ -45,8 +45,9 @@ try:
     # CONSTANTES
     FRAME_WIDTH = 1920
     FRAME_HEIGHT = 1080
+    CAM_EXPOSITION = -8.0
 
-    EXPO_NUM_FRAMES = 100
+    EXPO_NUM_FRAMES = 10
     FRAME_KIB_SIZE = 500
     MIN_FREE_SPACE = 4 # En GiB
     WAIT_TIME_ON_FULL_DISK = 3600 # SEGUNDOS DE ESPERA ENTRE MENSAJES DE "DISCO LLENO"
@@ -205,6 +206,7 @@ try:
             # Configuramos las camaras validas
             cam.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
             cam.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
+            cam.set(15, CAM_EXPOSITION) # Exposicion
 
             # Sacamos frames para que la exposicion automatica se estabilice
             for i in range(EXPO_NUM_FRAMES):
@@ -238,6 +240,7 @@ try:
                     cam = cv2.VideoCapture(cam_path)
                     cam.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
                     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
+                    cam.set(15, CAM_EXPOSITION) # Exposicion
                     for i in range(EXPO_NUM_FRAMES):
                         ret, frame = cam.read()
                     ret, frame = cam.read()
