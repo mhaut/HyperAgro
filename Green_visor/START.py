@@ -89,14 +89,9 @@ try:
         """
 
         STT = getSecondsToNextTarget()
-        # Esperamos la mitad del tiempo hasta que queden menos de X segundos
-        while STT > 60:
-            sendMSG("Durmiendo " + str(STT//2) + " segundos", dont_print=True)
-            time.sleep(STT//2)
-            STT = getSecondsToNextTarget()
-        
+
         # Dormimos lo que queda
-        sendMSG("Durmiendo ultimos" + str(STT) + " segundos", dont_print=True)
+        sendMSG("Durmiendo " + str(STT) + " segundos", dont_print=True)
         time.sleep(STT)
 
 
