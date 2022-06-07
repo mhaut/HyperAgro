@@ -10,8 +10,12 @@ def sr_cube(cube, r800=135, r680=126):
     return indiceAux / abs(indiceAux.max()) if abs(indiceAux.max()) > abs(indiceAux.min()) else indiceAux / abs(indiceAux.min())     
 
 def sr_bands(r800, r680):
+    #Para evitar divisiones por 0 (poco probable pero posible) se sustituyen por 1
+    r680 = np.where(r680 == 0, 1, r680)
+    print("Reflectancia de una hoja roja:",r680[389,295],r800[389,295] )
     indiceAux = np.array([x1 / x2 for (x1, x2) in zip(r800, r680)])
-    return indiceAux / abs(indiceAux.max()) if abs(indiceAux.max()) > abs(indiceAux.min()) else indiceAux / abs(indiceAux.min())     
+    #Se devuelve el resultado normalizado entre 0 y 1
+    return indiceAux / indiceAux.max()   
 
 
 #Greeness Index
@@ -36,7 +40,8 @@ def ndre_bands( nir5, red3):
 
 #Normalised Difference Vegetation Index
 def ndvi_cube(cube, r800=180, r670=121):
-    indiceAux = np.array([(x1 - x2) / (x1 + x2) for(x1, x2) in zip(cube.read_band(r800), cube.read_band(r670))])
+    indiceAux = np.array([(x1 - x2) / (x1 + x2) for(x1, x2) in zip(cube[:,:,r800], cube[:,:,r670])])
+    np.nan_to_num(indiceAux, copy=False, nan=0)
     return indiceAux / abs(indiceAux.max()) if abs(indiceAux.max()) > abs(indiceAux.min()) else indiceAux / abs(indiceAux.min())     
 
 def ndvi_bands(r800, r670):    

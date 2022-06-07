@@ -10,18 +10,12 @@ def preparar_batches(him):
     nCoresDisponibles = multiprocessing.cpu_count() - 1
     if nCoresDisponibles == 0: nCoresDisponibles += 1 #Por si acaso solo se tiene un core    
     batches = []
-    if (len(him) // nCoresDisponibles) % 3 != 0:
-        valoresFaltantes = len(him) % nCoresDisponibles
-        batch_size = (len(him) // nCoresDisponibles) + valoresFaltantes
-        batch_reminder_size = batch_size - ((nCoresDisponibles - 1) * valoresFaltantes) 
-        for i in range(nCoresDisponibles - 1):
-            batches.append(him[i*batch_size:(i+1)*batch_size])
-        batches.append(him[-batch_reminder_size:])
-    else:
-        batch_size = (len(him) // nCoresDisponibles)
-        for i in range(nCoresDisponibles):
-            batches.append(him[i*batch_size:(i+1)*batch_size])
-
+    valoresFaltantes = len(him) % nCoresDisponibles
+    batch_size = (len(him) // nCoresDisponibles) + valoresFaltantes
+    batch_reminder_size = batch_size - ((nCoresDisponibles - 1) * valoresFaltantes) 
+    for i in range(nCoresDisponibles - 1):
+        batches.append(him[i*batch_size:(i+1)*batch_size])
+    batches.append(him[-batch_reminder_size:])
     print(f"Numero de batches -> {nCoresDisponibles}\nTamano de batch -> {batch_size}")
     if (len(him) // nCoresDisponibles) % 3 != 0: print(f"Tamano del ultimo batch -> {batch_reminder_size}")  
     return batches
