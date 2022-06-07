@@ -56,10 +56,10 @@ class RepeatedTimer(object):
                     sourceFile = open(filePath, 'rb')
                     fs.put(sourceFile, filename=f, metadata= {"timestamp":timestamp})
                     os.remove(filePath)   
-                ftpConn.delete(self.args[1] + "/" + f)
+                ftpConn.delete(self.args[1] + "/" + f) #Se borra el fichero leido de la camara
                 
-            ftpConn.rmd(self.args[1])
-            ftpConn.quit()
+            ftpConn.rmd(self.args[1]) #Se borra el directorio vaciado de la camara
+            ftpConn.quit() #Se cierra la conexion
         except: 
             # Si la conexion falla se guarda en un fichero la ruta del directorio para procesarlo en otro momento
             print("################ERROR################")
