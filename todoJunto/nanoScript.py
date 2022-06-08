@@ -4,7 +4,7 @@ import time
 
 import nano
 import RepeatedTimer
-import utilTime
+import utils
 ########################
 ## Variables globales ##
 ########################
@@ -68,7 +68,7 @@ def captura():
 #exit()
 while True:
     # Esperamos hasta la siguiente hora target antes de la siguiente captura
-    utilTime.waitTillTargetTime(TARGET_DATETIME_TIME)
+    utils.waitTillTargetTime(TARGET_DATETIME_TIME)
     # Una vez despierta, ejecuta la funcionalidad
     captura()
 

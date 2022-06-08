@@ -64,8 +64,8 @@ def captura():
 ##        MAIN        ##
 ########################
 
-#captura()
-#exit()
+captura()
+exit()
 while True:
     # Esperamos hasta la siguiente hora target antes de la siguiente captura
     utilTime.waitTillTargetTime(TARGET_DATETIME_TIME)
