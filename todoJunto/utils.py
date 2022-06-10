@@ -1,13 +1,33 @@
+import cv2
 from datetime import datetime
+import logging
+import shutil, glob
+import os
+import sys
 import time 
-
-
+from telegram_debugger import sendMSG
+import numpy as np
+import json
 
 BASE_DATETIME_DATE   = "2000-01-01T" # NO CAMBIAR
 
+def get_logger(parent_folder, save_logfile=False):
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+    stdout_handler.setFormatter(formatter)
+    if save_logfile:
+        file_handler = logging.FileHandler(os.path.join(parent_folder, args.logfile))
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    logger.addHandler(stdout_handler)
+    return logger
 
 
-def getSecondsToNextTarget(target_datetime_time):
+def getSecondsToNextTarget(target_datetime_time, ):
     """
     Funcion que devuelve los segundos que faltan 
     para llegar a la hora target del dia. Si se ha pasado 
@@ -28,7 +48,7 @@ def waitTillTargetTime(target_datetime_time):
     # Dormimos lo que queda
     time.sleep(STT)
 
-
+# Se sobreescribe el cntrl+c
 def signal_handler(sig, frame):
     """
     Handler de SIGINT (Ctrl + C) para cerrar los flujos 
@@ -42,15 +62,19 @@ def signal_handler(sig, frame):
         cv2.destroyAllWindows()
     except:
         pass
-    sendMSG("Ctrl+C detectado. Saliendo del programa")
-    msg = ""
-    for i in range(15): msg += ":white_square_button:"
-    sendMSG(msg)
     sys.exit(0)
 
 
-def read_cam_list(pathfile=None):
-    return [
+# Lista con los directorios en los que se encuentran montadas las camaras
+def read_cam_list(pathfile=None, lab=True):
+    if lab == True:
+        return [
+            {"path": "/dev/video0",  "pos": 0, "correction": cv2.ROTATE_90_COUNTERCLOCKWISE},
+            #{"path": "/dev/video2", "pos": 2, "correction": cv2.ROTATE_90_CLOCKWISE}
+            ]
+    
+    else: # mofrague
+        return [
             {"path": "/dev/video0",  "pos": 0, "correction": cv2.ROTATE_90_COUNTERCLOCKWISE},
             {"path": "/dev/video10", "pos": 1, "correction": cv2.ROTATE_90_COUNTERCLOCKWISE},
             {"path": "/dev/video8",  "pos": 2, "correction": cv2.ROTATE_90_COUNTERCLOCKWISE},
@@ -58,35 +82,29 @@ def read_cam_list(pathfile=None):
             {"path": "/dev/video6",  "pos": 4, "correction": cv2.ROTATE_90_CLOCKWISE},
             {"path": "/dev/video4",  "pos": 5, "correction": cv2.ROTATE_90_CLOCKWISE},
             {"path": "/dev/video2",  "pos": 6, "correction": cv2.ROTATE_90_CLOCKWISE}
-        ]
+            ]
 
-
-def full_disk(frame_KB_size):
+# 
+def full_disk(frame_KB_size, saving_folder, logger):
     MIN_FREE_SPACE = 4
     total, used, free = shutil.disk_usage("/")
 
     frames_left = (free // (2**10)) // frame_KB_size # un frame aprox 280 KiB a 720p o 500KiB a 1080p
     img_num = len(glob.glob(os.path.join(saving_folder, "*.jpg")))
-    print("Espacio libre en disco:", free // (2**20), "MiB (" + str(frames_left), "frames)")
-    print("Imagenes actuales:", img_num, "(" + str(img_num // len(cam_list)), "packs)")
-
-    # Info para telegram
-    sendMSG("Espacio libre en disco:", free // (2**20), "MiB  (" + str(frames_left), "frames)", dont_print=True)
-    sendMSG("Imagenes actuales:", img_num, "(" + str(img_num // len(cam_list)), "packs)", dont_print=True)
-
+    logger.info("Espacio libre en disco: " + str(free // (2**20)) + " MiB (" + str(frames_left) + " frames)")
     # Comprobacion de seguridad de espacio libre
     if (free // (2**30)) <= MIN_FREE_SPACE:
-        string = "[!] QUEDAN MENOS DE " + str(MIN_FREE_SPACE) + " GB LIBRES [!]"
-        sendMSG(string, is_warning=True, dont_print=True)
-        return False
-    return True
+        logger.info("[!] QUEDAN MENOS DE " + str(MIN_FREE_SPACE) + " GB LIBRES [!]")
+        return True
+    return False
 
 
-def get_image(cam_path):
+def get_image_rgb(cam_path, cam_correction, logger):
+    logger.info(cam_path)
     # CONSTANTES
     FRAME_WIDTH = 1920
     FRAME_HEIGHT = 1080
-    EXPO_NUM_FRAMES = 10
+    EXPO_NUM_FRAMES = 40
     # Conectamos con la camara
     cam = cv2.VideoCapture(cam_path)
 
@@ -96,7 +114,7 @@ def get_image(cam_path):
         sendMSG(string, is_warning=True, dont_print=True)
         frame = np.zeros((FRAME_WIDTH,FRAME_HEIGHT,3), dtype=np.uint8)
         return False, frame
-    print("Entrada de video " + str(cam_path) + " valida.", end=" ")   
+    logger.info("Entrada de video " + str(cam_path) + " valida.", end=" ")   
     # Configuramos las camaras validas
     cam.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
@@ -111,3 +129,26 @@ def get_image(cam_path):
     cam.release()
     if ret == False: frame = np.zeros((FRAME_WIDTH,FRAME_HEIGHT,3), dtype=np.uint8)
     return ret, frame
+
+
+def get_image_hyper(credentials_path,source_folder, dest_folder, capture_timestamp, logger)
+    try:
+        credentials_file = open(credentials_path, "rb")
+        credentials = json.load(credentials_file)
+        credentials_file.close()
+        ftpConn = ftp.FTP(credentials["dirIP"])
+        ftpConn.login(credentials["user"], credentials["password"])
+        for f in ftpConn.nlst(source_folder):
+            if 'raw' in f:
+                dest_filepath = os.path.abspath(join(dest_folder), 'HIM__' + capture_timestamp + ".bin")
+                if f.endswith(".hdr") :
+                    dest_filepath = os.path.abspath(join(dest_folder), 'HIM__' + capture_timestamp + ".hdr")
+                with open(dest_filepath, 'wb') as dest_file:
+                    ftpConn.retrbinary("RETR " + source_folder + "/" + f, dest_file.write)
+
+            ftpConn.delete(source_folder + "/" + f) #Se borra el fichero leido de la camara            
+        ftpConn.rmd(self.args[1]) #Se borra el directorio vaciado de la camara
+        ftpConn.quit() #Se cierra la conexion
+    except:
+        logger.info("Ha ocurrido un error en la descarga de los ficheros") 
+
