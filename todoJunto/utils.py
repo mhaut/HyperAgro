@@ -150,4 +150,4 @@ def delete_images(source_folder, max_ttl, logger):
         file_deltatime = datetime.now() - os.getmtime(file_path)
         if file_deltatime > max_ttl:
             #os.remove(os.path.join(source_folder,image))
-            logger.info(f"fichero {file_path.split(\"/\")[-1]} listo para ser borrado")
+            logger.info("fichero " +  file_path.split("/")[-1] + " listo para ser borrado")
