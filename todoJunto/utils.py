@@ -11,7 +11,7 @@ import json
 
 BASE_DATETIME_DATE   = "2000-01-01T" # NO CAMBIAR
 
-def get_logger(parent_folder, save_logfile=False):
+def get_logger(parent_folder, log_file save_logfile=False):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
@@ -27,7 +27,7 @@ def get_logger(parent_folder, save_logfile=False):
     return logger
 
 
-def getSecondsToNextTarget(target_datetime_time, ):
+def getSecondsToNextTarget(target_datetime_time):
     """
     Funcion que devuelve los segundos que faltan 
     para llegar a la hora target del dia. Si se ha pasado 
@@ -48,21 +48,7 @@ def waitTillTargetTime(target_datetime_time):
     # Dormimos lo que queda
     time.sleep(STT)
 
-# Se sobreescribe el cntrl+c
-def signal_handler(sig, frame):
-    """
-    Handler de SIGINT (Ctrl + C) para cerrar los flujos 
-    de las camaras al cerrar el programa.
-    """
-    print('Ctrl+C detectado. Liberando flujos y cerrando programa...')
-    try:
-        # Liberamos las camaras
-        print('Liberando flujos')
-        cam.release()
-        cv2.destroyAllWindows()
-    except:
-        pass
-    sys.exit(0)
+
 
 
 # Lista con los directorios en los que se encuentran montadas las camaras
@@ -107,6 +93,23 @@ def get_image_rgb(cam_path, cam_correction, logger):
     EXPO_NUM_FRAMES = 40
     # Conectamos con la camara
     cam = cv2.VideoCapture(cam_path)
+    # Se reescribe la senal cntrl + c
+
+    def signal_handler(cam):
+        """
+        Handler de SIGINT (Ctrl + C) para cerrar los flujos 
+        de las camaras al cerrar el programa.
+        """
+        print('Ctrl+C detectado. Liberando flujos y cerrando programa...')
+        try:
+            # Liberamos las camaras
+            print('Liberando flujos')
+            cam.release()
+            cv2.destroyAllWindows()
+        except:
+            pass
+        sys.exit(0)
+    signal.signal(signal.SIGINT, signal_handler)
 
     # Si la camara no es valida, descartamos y avisamos
     if not (cam.isOpened()):
@@ -123,10 +126,12 @@ def get_image_rgb(cam_path, cam_correction, logger):
         ret, frame = cam.read()
     # Sacamos el frame definitivo
     ret, frame = cam.read()
-    # Ralizamos la correccion pertinente a la imagen de la camara X
+    # Realizamos la correccion pertinente a la imagen de la camara X
     frame = cv2.rotate(frame, cam_correction)
     # Liberamos el flujo
     cam.release()
+    # Se restablece la senal cntrl + c
+    signal.signal(signal.SIGINT, sys.exit(0))
     if ret == False: frame = np.zeros((FRAME_WIDTH,FRAME_HEIGHT,3), dtype=np.uint8)
     return ret, frame
 

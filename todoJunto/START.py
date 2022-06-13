@@ -7,6 +7,7 @@
 import os
 import time
 import re
+import nano
 
 def main (args) 
     # Se obtienen las rutas de las carpetas relevantes 
@@ -17,7 +18,7 @@ def main (args)
     # Se crean los directorios si no existen
     [os.mkdir(folder) for folder in [shared_folder, rgb_saving_folder, hyper_saving_folder] if not os.path.exists(folder)]
     #Se obtiene el logger para escribir el output
-    logger = get_logger(parent_folder)
+    logger = get_logger(parent_folder, args.logfile)
     # Se obtiene la lista de las camaras RGB
     cam_list = utils.read_cam_list(lab=False)
     # Se definen ventanas y marcas de tiempo para su posterior uso
@@ -42,10 +43,9 @@ def main (args)
             for cam_entry in cam_list:
                 cam_path, cam_pos, cam_correction = cam_entry["path"], cam_entry["pos"], cam_entry["correction"]
                 for i in range(20):
-                    ret, frame = utils.get_image_rgb(cam_path)
+                    ret, frame = utils.get_image_rgb(cam_path, cam_correction, logger)
                     if ret == False: continue
                     else:
-                        ret, frame = data
                         break
                 # Si (ret == True) -> se guarda la imagen, si no -> se guarda un frame negro
                 img_name = instante_captura + "___pos_" + str(cam_pos) + "___cam_" + cam_path.split("video")[-1] + ".jpg"
@@ -75,16 +75,19 @@ def main (args)
         except Exception as e:
             logger.info("Ha habido un error durante la captura Hyper")
             logger.info(e.message)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='HyperGreen')
-    #Directorio compartido
+    #Directorios
     parser.add_argument('--sharedFolder',      type=str,  default='saving',   help='Directorio compartido')
-    #Parametros de la captura RGB
-    parser.add_argument('--pathsaveRGB',      type=str,  default='rgb',       help='Directorio donde se guardan las imagenes RGB')
-    parser.add_argument('--time_fulldisk',    type=int,  default=3600,        help='segundos de espera entre mensajes de "disco lleno"')
     parser.add_argument('--logfile',          type=str,  default='myapp.log', help='log file')
-    #Parametros de la captura Hiper
+    parser.add_argument('--pathsaveRGB',      type=str,  default='rgb',       help='Directorio donde se guardan las imagenes RGB')
     parser.add_argument('--pathsaveHyper',    type=str,  default='hyper',     help='Directorio donde se guardan las imagenes Hyper')
+
+    #Parametros de la captura RGB
+    parser.add_argument('--time_fulldisk',    type=int,  default=3600,        help='segundos de espera entre mensajes de "disco lleno"')
+
+    #Parametros de la captura Hiper
     parser.add_argument('--credentials',    type=str,  default='credentialsHyper.json',     help='Fichero donde se guardan las credenciales Hyper')
     parser.add_argument('--verbosity',        type=bool, default=False,       help='ON/OFF del modo verbose de logging de la camara hiper')
     parser.add_argument('--exposureTime',     type=int,  default=20,          help='Tiempo de exposicion de la camara Hiper')
