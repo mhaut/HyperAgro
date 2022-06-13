@@ -146,7 +146,7 @@ def get_image_hyper(credentials_path,source_folder, dest_folder, capture_timesta
 
 def delete_images(source_folder, max_ttl, logger):
     for image in os.listdir(source_folder):
-        file_path = os.path.join(source_folder,image))
+        file_path = os.path.join(source_folder, image)
         file_deltatime = datetime.now() - os.getmtime(file_path)
         if file_deltatime > max_ttl:
             #os.remove(os.path.join(source_folder,image))
