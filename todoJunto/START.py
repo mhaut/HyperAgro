@@ -6,7 +6,7 @@
 
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import argparse
 import nano
 import utils
@@ -26,10 +26,15 @@ def main (args):
     cam_list = utils.read_cam_list(lab=False)
     # Se definen ventanas y marcas de tiempo para su posterior uso
     capture_instant_isoformat = args.captureTime
+    rgb_ttl = timedelta(days=30)
+    hyper_ttl = timedelta(days=7)
     wait_time_full_disk = 3600           
     #Se sobrescribe la senal cntrl+c
 
     while True:
+        #Se comprueba si hay ficheros que deben ser borrados
+        utils.delete_images(rgb_saving_folder, rgb_ttl, logger)
+        utils.delete_images(hyper_saving_folder, hyper_ttl, logger)
         # Esperamos hasta la siguiente hora target antes de la siguiente captura
         logger.info("Proceso dormido")
         utils.waitTillTargetTime(capture_instant_isoformat) 
