@@ -5,13 +5,13 @@ import shutil, glob
 import os
 import sys
 import time 
-from telegram_debugger import sendMSG
+import signal
 import numpy as np
 import json
 
 BASE_DATETIME_DATE   = "2000-01-01T" # NO CAMBIAR
 
-def get_logger(parent_folder, log_file save_logfile=False):
+def get_logger(parent_folder, log_file, save_logfile=False):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
@@ -71,12 +71,12 @@ def read_cam_list(pathfile=None, lab=True):
             ]
 
 # 
-def full_disk(frame_KB_size, saving_folder, logger):
+def full_disk(frame_KB_size, logger):
     MIN_FREE_SPACE = 4
     total, used, free = shutil.disk_usage("/")
 
     frames_left = (free // (2**10)) // frame_KB_size # un frame aprox 280 KiB a 720p o 500KiB a 1080p
-    img_num = len(glob.glob(os.path.join(saving_folder, "*.jpg")))
+    #img_num = len(glob.glob(os.path.join(saving_folder, "*.jpg")))
     logger.info("Espacio libre en disco: " + str(free // (2**20)) + " MiB (" + str(frames_left) + " frames)")
     # Comprobacion de seguridad de espacio libre
     if (free // (2**30)) <= MIN_FREE_SPACE:
@@ -92,32 +92,17 @@ def get_image_rgb(cam_path, cam_correction, logger):
     FRAME_HEIGHT = 1080
     EXPO_NUM_FRAMES = 40
     # Conectamos con la camara
-    cam = cv2.VideoCapture(cam_path)
-    # Se reescribe la senal cntrl + c
 
-    def signal_handler(cam):
-        """
-        Handler de SIGINT (Ctrl + C) para cerrar los flujos 
-        de las camaras al cerrar el programa.
-        """
-        print('Ctrl+C detectado. Liberando flujos y cerrando programa...')
-        try:
-            # Liberamos las camaras
-            print('Liberando flujos')
-            cam.release()
-            cv2.destroyAllWindows()
-        except:
-            pass
-        sys.exit(0)
-    signal.signal(signal.SIGINT, signal_handler)
+    cam = cv2.VideoCapture(cam_path)
+
 
     # Si la camara no es valida, descartamos y avisamos
     if not (cam.isOpened()):
         string = "Entrada de video " + str(cam_path) + " no valida."
-        sendMSG(string, is_warning=True, dont_print=True)
         frame = np.zeros((FRAME_WIDTH,FRAME_HEIGHT,3), dtype=np.uint8)
         return False, frame
-    logger.info("Entrada de video " + str(cam_path) + " valida.", end=" ")   
+		
+    logger.info("Entrada de video " + str(cam_path) + " valida.")   
     # Configuramos las camaras validas
     cam.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
@@ -131,17 +116,19 @@ def get_image_rgb(cam_path, cam_correction, logger):
     # Liberamos el flujo
     cam.release()
     # Se restablece la senal cntrl + c
-    signal.signal(signal.SIGINT, sys.exit(0))
+
     if ret == False: frame = np.zeros((FRAME_WIDTH,FRAME_HEIGHT,3), dtype=np.uint8)
     return ret, frame
 
 
-def get_image_hyper(credentials_path,source_folder, dest_folder, capture_timestamp, logger)
+
+
+def get_image_hyper(credentials_path,source_folder, dest_folder, capture_timestamp, logger):
     try:
         credentials_file = open(credentials_path, "rb")
         credentials = json.load(credentials_file)
         credentials_file.close()
-        ftpConn = ftp.FTP(credentials["dirIP"])
+        ftpConn = ftp.FTP(credentials["dirIP"], timeout=10)
         ftpConn.login(credentials["user"], credentials["password"])
         for f in ftpConn.nlst(source_folder):
             if 'raw' in f:
@@ -154,6 +141,6 @@ def get_image_hyper(credentials_path,source_folder, dest_folder, capture_timesta
             ftpConn.delete(source_folder + "/" + f) #Se borra el fichero leido de la camara            
         ftpConn.rmd(self.args[1]) #Se borra el directorio vaciado de la camara
         ftpConn.quit() #Se cierra la conexion
-    except:
-        logger.info("Ha ocurrido un error en la descarga de los ficheros") 
+    except Exception as e:
+        logger.error("Ha ocurrido un error en la descarga de los ficheros\n", e) 
 

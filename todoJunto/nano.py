@@ -12,8 +12,8 @@ class Nano:
         self.verbose = verbose
     
     def connect(self):
-        print("Connecting to " + self.host + "@" + str(self.port) + "\n")
-        self.telnetObject = telnetlib.Telnet(self.host, self.port)
+        #print("Connecting to " + self.host + "@" + str(self.port) + "\n")
+        self.telnetObject = telnetlib.Telnet(self.host, self.port, 15)
         self.telnetObject.read_until(b"hpi> ")	
 
     def disconnect(self):
