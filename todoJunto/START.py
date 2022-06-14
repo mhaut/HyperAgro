@@ -78,7 +78,7 @@ def main (args):
             
             logger.info("La captura de la imagen espectral ha terminado")
 
-            get_image_hyper(os.path.abspath(join(parent_folder, args.credentials)),source_folder, hyper_saving_folder, capture_timestamp, logger)
+            utils.get_image_hyper(os.path.abspath(os.path.join(parent_folder, args.credentials)),source_folder, hyper_saving_folder, capture_timestamp, logger)
         except Exception as e:
             logger.warning("Ha habido un error durante la captura Hyper\n")
             logger.debug(e)	

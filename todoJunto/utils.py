@@ -8,6 +8,7 @@ import time
 import signal
 import numpy as np
 import json
+import ftplib as ftp
 
 BASE_DATETIME_DATE   = "2000-01-01T" # NO CAMBIAR
 
@@ -132,15 +133,16 @@ def get_image_hyper(credentials_path,source_folder, dest_folder, capture_timesta
         ftpConn.login(credentials["user"], credentials["password"])
         for f in ftpConn.nlst(source_folder):
             if 'raw' in f:
-                dest_filepath = os.path.abspath(join(dest_folder), 'HIM__' + capture_timestamp + ".bin")
+                dest_filepath = os.path.abspath(os.path.join(dest_folder, 'HIM__' + capture_timestamp + ".bin"))
                 if f.endswith(".hdr") :
-                    dest_filepath = os.path.abspath(join(dest_folder), 'HIM__' + capture_timestamp + ".hdr")
+                    dest_filepath = os.path.abspath(os.path.join(dest_folder, 'HIM__' + capture_timestamp + ".hdr"))
                 with open(dest_filepath, 'wb') as dest_file:
                     ftpConn.retrbinary("RETR " + source_folder + "/" + f, dest_file.write)
 
             ftpConn.delete(source_folder + "/" + f) #Se borra el fichero leido de la camara            
-        ftpConn.rmd(self.args[1]) #Se borra el directorio vaciado de la camara
+        ftpConn.rmd(source_folder) #Se borra el directorio vaciado de la camara
         ftpConn.quit() #Se cierra la conexion
+        logger.info("Se ha almacenado la imagen " + " HIM__" + capture_timestamp + " junto con su cabecera")
     except Exception as e:
         logger.error("Ha ocurrido un error en la descarga de los ficheros\n", e) 
 
