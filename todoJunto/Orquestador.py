@@ -68,6 +68,7 @@ class Orquestador:
                                                    self.credencialesFTP["user"], self.credencialesFTP["password"], self.logger))
             #Ejecucion paralela de la captura de todas las camaras
             self.logger.printINFO("Orquestador", "{} procesos preparados para realizar capturas paralelas".format(len(camaras)))
+            [camara.start() for camara in camaras]
             #Dormir hasta que haya que capturar
             self.logger.printINFO("Orquestador", "Durmiento al proceso principal pid = {} hasta la siguiente captura ({:.2f} horas)".format(os.getpid(), self.segundosPorDia/3600))
             time.sleep(self.segundosPorDia)
